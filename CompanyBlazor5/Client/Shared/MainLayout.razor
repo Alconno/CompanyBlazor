@@ -1,0 +1,171 @@
+﻿@using CompanyBlazor5.Shared
+@inherits LayoutComponentBase
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager nav
+@inject HttpClient Http
+
+<CascadingValue Value="this">
+<div class="page">
+	<div class="sidebar">
+		<NavMenu />
+	</div>
+
+	<main>
+		<div class="top-row px-4">
+			<div style="width:100px;text-align:right;" class="mb-1">
+			@if (LoggedIn)
+				{
+					<button class="btn btn-sm btn-danger" title="Logout" @onclick="Logout"><span class="oi oi-account-logout"></span></button>
+				}
+				else
+				{
+					<a class="btn btn-sm btn-primary text-white" title="Register" href="/register"><span class="oi oi-pencil"></span></a>
+					<button class="btn btn-sm btn-success" title="Login" @onclick="OpenLogin"><span class="oi oi-account-login"></span></button>
+				}
+			</div>
+		</div>
+
+		<article class="content px-4">
+			@Body
+		</article>
+	</main>
+</div>
+</CascadingValue>
+<div class="modal-backdrop fade @(show ? "show" : "") @(display ? "" : "d-none")"></div>
+<div class="modal fade @(show ? "show" : "")  @(display ? "d-block" : "d-none")" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Login Form</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="Cancel">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<form @onsubmit="SubmitLogonForm">
+				<div class="modal-body">
+					<div class="mb-3">
+						<label for="Name" class="form-label">Name</label>
+						<input type="text" class="form-control" id="Name" autocomplete="off" required @bind-value="log.Name" @onkeypress="() => loginMessage = null" />
+					</div>
+					<div class="mb-3">
+						<label for="loginPassword" class="form-label">Password</label>
+						<input type="password" class="form-control" id="loginPassword" required @bind-value="log.Password" @onkeypress="() => loginMessage = null" />
+					</div>
+					<div class="mb-3 alert alert-danger @(string.IsNullOrWhiteSpace(loginMessage) ? "d-none" : "")" role="alert">@loginMessage</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-success" disabled="@disableBtn">Login</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="Cancel">Cancel</button>
+					<a href="" @onclick="@GoogleLogin" @onclick:preventDefault>Login over Google</a>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<AuthorizeView>
+	<Authorized>
+		@foreach(var item in context.User.Claims){
+			<h2>@item.Type @item.Value</h2>
+		}
+		<img src="@context.User.Claims.Where(s=>s.Type=="picture").FirstOrDefault().Value" />
+	</Authorized>
+</AuthorizeView>
+
+@code {
+
+	private bool show, display, disableBtn;
+	LoginAccount log = new LoginAccount();
+	private string loginMessage, jwt, userName;
+	bool loggedIn;
+
+	[Parameter]
+	public bool LoggedIn
+	{
+		get { return loggedIn; }
+		set { } 
+	}
+	[Parameter]
+
+	public string JWT
+	{
+		get { return jwt; }
+		set { } 
+	}
+
+	[Parameter]
+	public string UserName
+	{
+		get { return userName; }
+		set { } 
+	}
+
+	public async Task OpenLogin()
+	{
+		log.Clear();
+		display = true;
+		await Task.Delay(100);
+		show = true;
+	}
+
+	public async Task Logout()
+	{
+		userName = jwt = null;
+		log.Clear();
+		loggedIn = false;
+		await LocalStorage.RemoveItem("name");
+		await LocalStorage.RemoveItem("jwt");
+	
+	}
+
+	private async Task<bool> SubmitLogonForm()
+	{
+		if (!string.IsNullOrEmpty(log.Name) && !string.IsNullOrEmpty(log.Password))
+		{
+			disableBtn = true;
+			using (var msg = await Http.PostAsJsonAsync<LoginAccount>("api/user/login", log, System.Threading.CancellationToken.None))
+			{
+				if (msg.IsSuccessStatusCode)
+				{
+					LoginResult result = await msg.Content.ReadFromJsonAsync<LoginResult>();
+					if (!string.IsNullOrEmpty(result.JWT))
+					{	
+						await Cancel();
+						loggedIn = true;
+						jwt = result.JWT;
+						userName = result.Name;
+						await LocalStorage.SetItem("name", result.Name);
+						await LocalStorage.SetItem("jwt", result.JWT);
+					}
+					else
+					{
+						loginMessage = result.Message;
+					}
+				}
+				disableBtn = false;
+			}
+		}
+		return false;
+	}	
+
+	private async Task GoogleLogin(){
+		nav.NavigateTo("/api/user/googleAuth", true);
+	}
+
+	private async Task Cancel()
+	{
+		loginMessage = null;
+		show = false;
+		await Task.Delay(500);
+		display = false;
+	}
+
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		jwt = await LocalStorage.GetItem<string>("jwt");
+		userName = await LocalStorage.GetItem<string>("name");
+		loggedIn = !string.IsNullOrEmpty(jwt);
+	}
+}

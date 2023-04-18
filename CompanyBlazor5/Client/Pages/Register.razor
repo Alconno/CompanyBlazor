@@ -1,0 +1,87 @@
+﻿@page "/register"
+@using CompanyBlazor5.Shared
+@inject HttpClient Http
+@inject NavigationManager nav
+
+<h3 class="my-3">Registration</h3>
+
+<form @onsubmit="SubmitForm">
+	<div class="mb-3">
+		<p>Enter your information.</p>
+	</div>
+	<div class="mb-3">
+		<label for="email" class="form-label">Name</label>
+		<input type="text" class="form-control" id="email"  autocomplete="off" required @bind-value="reg.Name" @onkeypress="() => message = null" />
+	</div>
+	<div class="mb-3">
+		<label for="pwd1" class="form-label">Password</label>
+		<input type="password" class="form-control" id="pwd1" required @bind-value="reg.Password" @onkeypress="() => message = null" />
+	</div>
+	<div class="mb-3">
+		<label for="pwd2" class="form-label">Confirm Password</label>
+		<input type="password" class="form-control" id="pwd2" required @bind-value="confirmpwd" @onkeypress="() => message = null" />
+	</div>
+	<button type="submit" class="btn btn-primary" disabled="@disableBtn">Submit</button>
+</form>
+
+<div class="my-3 alert alert-@alertType @(string.IsNullOrWhiteSpace(message) ? "d-none" : "")" role="alert">@message</div>
+
+@code {
+	[CascadingParameter]
+	public MainLayout mainLayout { get; set; }
+
+	string alertType, message;
+	bool disableBtn;
+
+	RegisterAccount reg = new RegisterAccount();
+	string confirmpwd;
+
+	private async Task<bool> SubmitForm()
+	{
+		if (reg.Password.Length < 8)
+		{
+			alertType = "danger";
+			message = "Passwords must be at least 8 characters.";
+		}
+		else if (reg.Password != confirmpwd)
+		{
+			reg.Password = null;
+			confirmpwd = null;
+			alertType = "danger";
+			message = "Passwords do not match. Please try again.";
+		}
+		else
+		{
+			disableBtn = true;
+			using (var msg = await Http.PostAsJsonAsync<RegisterAccount>("/api/user/register", reg, System.Threading.CancellationToken.None))
+			{
+				if (msg.IsSuccessStatusCode)
+				{
+					RegisterResult result = await msg.Content.ReadFromJsonAsync<RegisterResult>();
+					if (result.Success)
+					{
+						alertType = "success";
+						message = $"You have been registered. Login using your password and the name {reg.Name}.";
+						reg.Clear();
+						confirmpwd = null;
+					}
+					else
+					{
+						alertType = "danger";
+						message = result.Message + " Try again with different values.";
+					}
+					nav.NavigateTo("/account");
+				}
+				disableBtn = false;
+			}
+
+		}
+		return false;
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+	}
+}

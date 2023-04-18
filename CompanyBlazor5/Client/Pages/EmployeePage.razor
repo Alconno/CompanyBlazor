@@ -1,0 +1,219 @@
+﻿@page "/employees"
+
+@inject IEmployeeService employeeService
+@inject IDepartmentService departmentService
+@inject NavigationManager navigationManager
+
+@if (employees != null && departments != null && mainLayout.LoggedIn)
+{
+    <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle_outline" class="mt-2 mb-4" Text="Add New Employee" Click="@InsertRow" Disabled=@(empToInsert != null || empToUpdate != null) />
+    <RadzenDataGrid style="--rz-grid-header-background-color: gray;" @ref="employeeGrid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true" EditMode="DataGridEditMode.Single"
+                Data="@emp_dp_data" TItem="EmployeeDepartmentBase" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+        <Columns>
+
+            <RadzenDataGridColumn TItem="EmployeeDepartmentBase" Property="employeeName" Title="Name" Width="280px">
+                <EditTemplate Context="rowEmployee">
+                    <RadzenTextBox @bind-Value="rowEmployee.employeeName" Style="width:100%; display: block" Name="Name" />
+                    <RadzenRequiredValidator Text="Name is required" Component="Name" Popup="true" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="EmployeeDepartmentBase" Property="Salary" Title="Salary" Width="220px">
+                <EditTemplate Context="rowEmployee">
+                    <RadzenNumeric @bind-Value=rowEmployee.Salary Style="width:100%; display: block" Name="Location" />
+                    <RadzenRequiredValidator Text="Location is required" Component="Location" Popup="true" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="EmployeeDepartmentBase" Property="lastModifyDate" Title="Last Modified" Width="220px">
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="EmployeeDepartmentBase" Property="departmentLocation_Name" Title="Department" Width="280px">
+                <Template Context="rowEmployee">
+                    @rowEmployee.departmentLocation_Name
+                </Template>
+                <EditTemplate Context="rowEmployee">
+                    <RadzenDropDown @bind-Value="rowEmployee.departmentNo" Data="@departments" TextProperty="departmentName" ValueProperty="departmentNo" Style="width:100%; display: block;">
+                        <Template>
+                            @context.departmentLocation - @context.departmentName
+                        </Template>    
+                    </RadzenDropDown>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="EmployeeDepartmentBase" Context="order" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
+                <Template Context="rowEmployee">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(rowEmployee))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(rowEmployee))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="rowEmployee">
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(rowEmployee))">
+                    </RadzenButton>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(rowEmployee))">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(rowEmployee))">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+else if (!mainLayout.LoggedIn)
+{
+    <h3>Login pls</h3>
+}
+else{
+    <h3>Loading...</h3>
+}
+
+@code {
+    [CascadingParameter]
+    public MainLayout mainLayout { get; set; }
+    RadzenDataGrid<EmployeeDepartmentBase> employeeGrid;
+    IEnumerable<Employee> employees;
+    IEnumerable<Department> departments;
+    IDictionary<int, string> departmentMap = new Dictionary<int, string>();
+    List<EmployeeDepartmentBase> emp_dp_data = new List<EmployeeDepartmentBase>();
+
+    EmployeeDepartmentBase empToInsert;
+    EmployeeDepartmentBase empToUpdate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        // get data from services that will be used
+        await employeeService.GetEmployees();
+        await departmentService.getDepartments(); // loading only once since departments will not be updated on this page
+        if (employeeService.employees == null) return;
+        employees = employeeService.employees;
+        departments = departmentService.departments;
+
+        // combines employees and departments into a base class that is used for table display with radzen
+        foreach(var empl in employees){
+            // link employee with their department data
+            Department employeesDepartment = departments.FirstOrDefault(d => d.departmentNo == empl.departmentNo);
+
+            if (employeesDepartment != null)
+            {
+                // added employee-department connection into Dictionary so we only do this search once
+                if (!departmentMap.ContainsKey(empl.departmentNo))
+                    departmentMap.Add(empl.departmentNo, $"{employeesDepartment.departmentLocation} - {employeesDepartment.departmentName}");
+                EmployeeDepartmentBase edData = new EmployeeDepartmentBase
+                    {
+                        employeeNo = empl.employeeNo,
+                        employeeName = empl.employeeName,
+                        Salary = empl.Salary,
+                        lastModifyDate = empl.lastModifyDate,
+                        departmentNo = empl.departmentNo,
+                        departmentLocation_Name = departmentMap[empl.departmentNo]
+                    };
+                emp_dp_data.Add(edData);
+            }
+        }
+    }
+    void Reset()
+    {
+        empToInsert = null;
+        empToUpdate = null;
+    }
+
+    async Task updateEmployees()
+    {
+        Reset();
+        await employeeService.GetEmployees();
+        employees = employeeService.employees;
+
+        // clear EmployeeDepartment base and get updated data
+        emp_dp_data = new List<EmployeeDepartmentBase>();
+        foreach (var empl in employees)
+        {
+            if (departmentMap[empl.departmentNo] != null)
+            {
+                EmployeeDepartmentBase edData = new EmployeeDepartmentBase
+                    {
+                        employeeNo = empl.employeeNo,
+                        employeeName = empl.employeeName,
+                        Salary = empl.Salary,
+                        lastModifyDate = empl.lastModifyDate,
+                        departmentNo = empl.departmentNo,
+                        departmentLocation_Name = departmentMap[empl.departmentNo]
+                    };
+                emp_dp_data.Add(edData);
+            }
+        }
+        //StateHasChanged();
+    }
+
+    async Task EditRow(EmployeeDepartmentBase emp)
+    {
+        empToUpdate = emp;
+        await employeeGrid.EditRow(emp);
+    }
+
+    async Task OnUpdateRow(EmployeeDepartmentBase emp)
+    {
+        empToInsert = emp == empToInsert ? null : empToInsert;
+        empToUpdate = null;
+
+        await employeeService.UpdateEmployee(convertToEmployee(emp));
+        await updateEmployees();
+    }
+
+    async Task SaveRow(EmployeeDepartmentBase emp)
+    {
+        await employeeGrid.UpdateRow(emp);
+        await updateEmployees();
+    }
+
+    async Task CancelEdit(EmployeeDepartmentBase emp)
+    {
+        empToInsert = emp == empToInsert ? null : empToInsert;
+        empToUpdate = null;
+
+        employeeGrid.CancelEditRow(emp);
+    }
+
+    async Task DeleteRow(EmployeeDepartmentBase emp)
+    {
+        empToInsert = emp == empToInsert ? null : empToInsert;
+        empToUpdate = emp == empToUpdate ? null : empToUpdate;
+
+
+        await employeeService.DeleteEmployee(emp.employeeNo);
+        await employeeGrid.Reload();
+        await updateEmployees();
+    }
+
+    async Task InsertRow()
+    {
+        empToInsert = new EmployeeDepartmentBase();
+        await employeeGrid.InsertRow(empToInsert);
+    }
+
+    async Task OnCreateRow(EmployeeDepartmentBase emp)
+    {
+        await employeeService.CreateEmployee(convertToEmployee(emp));
+        await updateEmployees();
+        empToInsert = null;
+    }
+
+    // will convert employeeDepartment base class into a Employee class so it can be passed to Service
+    public Employee convertToEmployee(EmployeeDepartmentBase employeeDepartmentData){
+        return new Employee
+        {
+            employeeNo = employeeDepartmentData.employeeNo,
+            employeeName = employeeDepartmentData.employeeName,
+            Salary = employeeDepartmentData.Salary,
+            lastModifyDate = DateTime.Now,
+            departmentNo = employeeDepartmentData.departmentNo,
+            department = new Department{
+                departmentNo=employeeDepartmentData.departmentNo,
+                departmentName=departmentMap[employeeDepartmentData.departmentNo].Split('-')[0],
+                departmentLocation=departmentMap[employeeDepartmentData.departmentNo].Split('-')[1]
+            }
+        };
+    }
+}

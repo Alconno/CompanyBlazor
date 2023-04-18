@@ -1,0 +1,27 @@
+﻿@page "/account"
+@inject ILocalStorageService localStorage
+@inject HttpClient Http
+@inject NavigationManager nav
+
+@if (mainLayout.LoggedIn)
+{
+	<h3 class="my-4">Account</h3>
+	<div class="alert alert-success" role="alert">Logged in as <b>@mainLayout.UserName</b></div>
+	<button class="btn btn-danger" @onclick="mainLayout.Logout">Logout</button>
+}
+else
+{
+	<div class="alert alert-danger" role="alert">Please Login for access...</div>
+	<button type="submit" class="btn btn-success" @onclick="mainLayout.OpenLogin">Login</button>
+}
+@code {
+	[CascadingParameter]
+	public MainLayout mainLayout { get; set; }
+
+
+	protected override async Task OnInitializedAsync()
+	{
+		
+		await base.OnInitializedAsync();
+	}
+}
