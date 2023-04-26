@@ -1,6 +1,7 @@
 using CompanyBlazor.Shared.Models;
 using CompanyBlazor5.Server;
 using CompanyBlazor5.Server.Data;
+using CompanyBlazor5.Server.Encryption;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -24,7 +25,9 @@ builder.Services.AddDbContext<CompanyBlazorDbContext>(options =>
 );
 
 builder.Services.AddSession();
+builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddScoped<IEncrypt, Encrypt>();
 
 builder.Services.AddResponseCompression(options =>
 {
@@ -44,7 +47,8 @@ builder.Services.AddAuthentication(options =>
 })
 .AddCookie(options =>
 {
-    options.LoginPath = "/signin-google";
+    options.Cookie.Name ="googleAuth";
+    options.LoginPath = "/api/user/googleAuth";
     options.ExpireTimeSpan = TimeSpan.FromDays(1);
 })
 .AddGoogle(options =>
@@ -87,16 +91,6 @@ builder.Services.AddAuthentication(options =>
 });
 
 
-builder.Services.AddCors(policy =>
-{
-    policy.AddPolicy("_myAllowSpecificOrigins", builder =>
-     builder.WithOrigins("http://localhost:7094", "https://localhost:7094", "https://accounts.google.com")
-      .SetIsOriginAllowed((host) => true) // this for using localhost address
-      .AllowAnyMethod()
-      .AllowAnyHeader()
-      .AllowCredentials());
-});
-
 
 var app = builder.Build();
 
@@ -114,22 +108,7 @@ else
     app.UseHsts();
 }
 app.UseSession();
-app.Use(async (context, next) =>
-{
-    var path = context.Request.Path;
-    if (path.Value.Contains("/swagger/", StringComparison.OrdinalIgnoreCase))
-    {
-        if (!context.User.Identity.IsAuthenticated)
-        {
-            context.Response.Redirect("/account");
-            return;
-        }
-    }
 
-    await next();
-});
-
-app.UseCors("_myAllowSpecificOrigins");
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseDeveloperExceptionPage();

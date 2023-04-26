@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace CompanyBlazor5.Server.Controllers
@@ -13,7 +14,7 @@ namespace CompanyBlazor5.Server.Controllers
     public class EmployeeController : ControllerBase
     {
         private readonly CompanyBlazorDbContext _db;
-        
+
         public EmployeeController(CompanyBlazorDbContext db)
         {
             _db=db;
@@ -37,7 +38,7 @@ namespace CompanyBlazor5.Server.Controllers
         public async Task<ActionResult<Employee>> GetEmployee(int id)
         {
             var employee = _db.Employees
-                .Include(h=>h.department)
+                .Include(h => h.department)
                 .FirstOrDefault(h => h.employeeNo==id);
             if (employee==null)
             {
@@ -47,8 +48,10 @@ namespace CompanyBlazor5.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Employee>>CreateEmployee(Employee entity)
+        public async Task<ActionResult<Employee>> CreateEmployee(Employee entity)
         {
+            if (!ModelState.IsValid)
+                return UnprocessableEntity(ModelState);
             entity.department = null;
             _db.Employees.Add(entity);
             await _db.SaveChangesAsync();
@@ -57,7 +60,7 @@ namespace CompanyBlazor5.Server.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<Employee>>UpdateEmployee(Employee entity, int id)
+        public async Task<ActionResult<Employee>> UpdateEmployee(Employee entity, int id)
         {
             var dbEmployee = await _db.Employees
                         .Include(sh => sh.department)
@@ -74,7 +77,7 @@ namespace CompanyBlazor5.Server.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult<List<Employee>>>DeleteEmployee(int id)
+        public async Task<ActionResult<List<Employee>>> DeleteEmployee(int id)
         {
             var dbEmployee = await _db.Employees
                         .Include(sh => sh.department)
@@ -86,7 +89,7 @@ namespace CompanyBlazor5.Server.Controllers
 
             return Ok(await GetDbEmployees());
         }
-        
+
 
         private async Task<List<Employee>> GetDbEmployees()
         {

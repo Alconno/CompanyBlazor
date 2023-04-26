@@ -41,7 +41,7 @@
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
-			<form @onsubmit="SubmitLogonForm">
+			<form @onsubmit="() => SubmitLogonForm(log)">
 				<div class="modal-body">
 					<div class="mb-3">
 						<label for="Name" class="form-label">Name</label>
@@ -63,15 +63,6 @@
 	</div>
 </div>
 
-<AuthorizeView>
-	<Authorized>
-		@foreach(var item in context.User.Claims){
-			<h2>@item.Type @item.Value</h2>
-		}
-		<img src="@context.User.Claims.Where(s=>s.Type=="picture").FirstOrDefault().Value" />
-	</Authorized>
-</AuthorizeView>
-
 @code {
 
 	private bool show, display, disableBtn;
@@ -83,10 +74,10 @@
 	public bool LoggedIn
 	{
 		get { return loggedIn; }
-		set { } 
+		set { }
 	}
-	[Parameter]
 
+	[Parameter]
 	public string JWT
 	{
 		get { return jwt; }
@@ -115,15 +106,15 @@
 		loggedIn = false;
 		await LocalStorage.RemoveItem("name");
 		await LocalStorage.RemoveItem("jwt");
-	
+		nav.NavigateTo("/api/user/logout", true);
 	}
 
-	private async Task<bool> SubmitLogonForm()
+	public async Task<bool> SubmitLogonForm(LoginAccount submitLog)
 	{
-		if (!string.IsNullOrEmpty(log.Name) && !string.IsNullOrEmpty(log.Password))
+		if (!string.IsNullOrEmpty(submitLog.Name) && !string.IsNullOrEmpty(submitLog.Password))
 		{
 			disableBtn = true;
-			using (var msg = await Http.PostAsJsonAsync<LoginAccount>("api/user/login", log, System.Threading.CancellationToken.None))
+			using (var msg = await Http.PostAsJsonAsync<LoginAccount>("api/user/login", submitLog, System.Threading.CancellationToken.None))
 			{
 				if (msg.IsSuccessStatusCode)
 				{
@@ -149,7 +140,7 @@
 	}	
 
 	private async Task GoogleLogin(){
-		nav.NavigateTo("/api/user/googleAuth", true);
+		nav.NavigateTo("/api/user/googleAuth?reqMadeFrom=login", true);
 	}
 
 	private async Task Cancel()
@@ -167,5 +158,7 @@
 		jwt = await LocalStorage.GetItem<string>("jwt");
 		userName = await LocalStorage.GetItem<string>("name");
 		loggedIn = !string.IsNullOrEmpty(jwt);
+
+
 	}
 }

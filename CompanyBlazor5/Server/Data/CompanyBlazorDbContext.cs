@@ -1,4 +1,5 @@
 ﻿using CompanyBlazor.Shared.Models;
+using CompanyBlazor5.Server.Encryption;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using System.Runtime.Intrinsics.Arm;
@@ -41,8 +42,8 @@ namespace CompanyBlazor5.Server.Data
             modelBuilder.Entity<Login>().ToTable("Logins");
 
             modelBuilder.Entity<Login>().HasData(
-                new Login { loginNo=1, loginUserName="Bill", loginPassword="ItsNotSoft" },
-                new Login { loginNo=2, loginUserName="Jean", loginPassword="trollsRule" }
+                new Login { loginNo=1, loginUserName="Bill", loginPassword=new Encrypt().Hash("ItsNotSoft") },
+                new Login { loginNo=2, loginUserName="Jean", loginPassword=new Encrypt().Hash("trollsRule") }
                 );
 
 

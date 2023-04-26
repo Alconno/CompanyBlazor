@@ -1,13 +1,17 @@
 ﻿@page "/"
-
-@attribute [Authorize]
+@using CompanyBlazor5.Shared
+@inject ILocalStorageService localStorage
+@inject HttpClient Http
+@inject NavigationManager nav
 
 <h3>hi</h3>
-
 @code {
+	[CascadingParameter]
+	public MainLayout mainLayout { get; set; }
+
 	protected override async Task OnInitializedAsync()
 	{
-
+		nav.NavigateTo("/account");
 		await base.OnInitializedAsync();
 	}
 }

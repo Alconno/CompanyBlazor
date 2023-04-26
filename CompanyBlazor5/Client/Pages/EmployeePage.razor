@@ -8,20 +8,22 @@
 {
     <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle_outline" class="mt-2 mb-4" Text="Add New Employee" Click="@InsertRow" Disabled=@(empToInsert != null || empToUpdate != null) />
     <RadzenDataGrid style="--rz-grid-header-background-color: gray;" @ref="employeeGrid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true" EditMode="DataGridEditMode.Single"
-                Data="@emp_dp_data" TItem="EmployeeDepartmentBase" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+                Data="@emp_dp_data" TItem="EmployeeDepartmentBase" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow"  Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
         <Columns>
 
             <RadzenDataGridColumn TItem="EmployeeDepartmentBase" Property="employeeName" Title="Name" Width="280px">
                 <EditTemplate Context="rowEmployee">
                     <RadzenTextBox @bind-Value="rowEmployee.employeeName" Style="width:100%; display: block" Name="Name" />
                     <RadzenRequiredValidator Text="Name is required" Component="Name" Popup="true" />
+                    <RadzenRegexValidator Text="Please enter name and surname correctly" Component="Name" Pattern="[a-zA-Z][a-z]+ [a-zA-Z][a-z]+" Popup=true></RadzenRegexValidator>
                 </EditTemplate>
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn TItem="EmployeeDepartmentBase" Property="Salary" Title="Salary" Width="220px">
                 <EditTemplate Context="rowEmployee">
-                    <RadzenNumeric @bind-Value=rowEmployee.Salary Style="width:100%; display: block" Name="Location" />
-                    <RadzenRequiredValidator Text="Location is required" Component="Location" Popup="true" />
+                    <RadzenNumeric @bind-Value=rowEmployee.Salary Style="width:100%; display: block" Name="Salary" />
+                    <RadzenRequiredValidator Text="Salary is required" Component="Salary" Popup="true" />
+                    <RadzenNumericRangeValidator Text="1<Salary<999999" Component="Salary" Min="2" Max="999998" Popup=true></RadzenNumericRangeValidator>
                 </EditTemplate>
             </RadzenDataGridColumn>
 
@@ -36,9 +38,10 @@
                     <RadzenDropDown @bind-Value="rowEmployee.departmentNo" Data="@departments" TextProperty="departmentName" ValueProperty="departmentNo" Style="width:100%; display: block;">
                         <Template>
                             @context.departmentLocation - @context.departmentName
-                        </Template>    
+                        </Template>
                     </RadzenDropDown>
-                </EditTemplate>
+                    <RadzenRequiredValidator Text="Department is required" DefaultValue="0" Popup="true"></RadzenRequiredValidator>
+              </EditTemplate>
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn TItem="EmployeeDepartmentBase" Context="order" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
@@ -64,7 +67,8 @@ else if (!mainLayout.LoggedIn)
 {
     <h3>Login pls</h3>
 }
-else{
+else
+{
     <h3>Loading...</h3>
 }
 
@@ -92,7 +96,8 @@ else{
         departments = departmentService.departments;
 
         // combines employees and departments into a base class that is used for table display with radzen
-        foreach(var empl in employees){
+        foreach (var empl in employees)
+        {
             // link employee with their department data
             Department employeesDepartment = departments.FirstOrDefault(d => d.departmentNo == empl.departmentNo);
 
@@ -201,19 +206,21 @@ else{
     }
 
     // will convert employeeDepartment base class into a Employee class so it can be passed to Service
-    public Employee convertToEmployee(EmployeeDepartmentBase employeeDepartmentData){
+    public Employee convertToEmployee(EmployeeDepartmentBase employeeDepartmentData)
+    {
         return new Employee
-        {
-            employeeNo = employeeDepartmentData.employeeNo,
-            employeeName = employeeDepartmentData.employeeName,
-            Salary = employeeDepartmentData.Salary,
-            lastModifyDate = DateTime.Now,
-            departmentNo = employeeDepartmentData.departmentNo,
-            department = new Department{
-                departmentNo=employeeDepartmentData.departmentNo,
-                departmentName=departmentMap[employeeDepartmentData.departmentNo].Split('-')[0],
-                departmentLocation=departmentMap[employeeDepartmentData.departmentNo].Split('-')[1]
-            }
-        };
+            {
+                employeeNo = employeeDepartmentData.employeeNo,
+                employeeName = employeeDepartmentData.employeeName,
+                Salary = employeeDepartmentData.Salary,
+                lastModifyDate = DateTime.Now,
+                departmentNo = employeeDepartmentData.departmentNo,
+                department = new Department
+                {
+                    departmentNo=employeeDepartmentData.departmentNo,
+                    departmentName=departmentMap[employeeDepartmentData.departmentNo].Split('-')[0],
+                    departmentLocation=departmentMap[employeeDepartmentData.departmentNo].Split('-')[1]
+                }
+            };
     }
 }

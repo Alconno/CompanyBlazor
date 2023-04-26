@@ -1,11 +1,12 @@
 ﻿@page "/register"
 @using CompanyBlazor5.Shared
+@using System.Diagnostics
 @inject HttpClient Http
 @inject NavigationManager nav
 
 <h3 class="my-3">Registration</h3>
 
-<form @onsubmit="SubmitForm">
+<form @onsubmit="() => SubmitRegisterForm(reg)">
 	<div class="mb-3">
 		<p>Enter your information.</p>
 	</div>
@@ -24,6 +25,8 @@
 	<button type="submit" class="btn btn-primary" disabled="@disableBtn">Submit</button>
 </form>
 
+<a href="" @onclick="@GoogleLogin" @onclick:preventDefault>Register over Google</a>
+
 <div class="my-3 alert alert-@alertType @(string.IsNullOrWhiteSpace(message) ? "d-none" : "")" role="alert">@message</div>
 
 @code {
@@ -36,14 +39,21 @@
 	RegisterAccount reg = new RegisterAccount();
 	string confirmpwd;
 
-	private async Task<bool> SubmitForm()
+	[Parameter]
+	[SupplyParameterFromQuery]
+	public string? Name { get; set; }
+	[Parameter]
+	[SupplyParameterFromQuery]
+	public string? Password { get; set; }
+
+	private async Task<bool> SubmitRegisterForm(RegisterAccount regAcc)
 	{
-		if (reg.Password.Length < 8)
+		if (regAcc.Password.Length < 8)
 		{
 			alertType = "danger";
 			message = "Passwords must be at least 8 characters.";
 		}
-		else if (reg.Password != confirmpwd)
+		else if (regAcc.Password != confirmpwd)
 		{
 			reg.Password = null;
 			confirmpwd = null;
@@ -53,7 +63,7 @@
 		else
 		{
 			disableBtn = true;
-			using (var msg = await Http.PostAsJsonAsync<RegisterAccount>("/api/user/register", reg, System.Threading.CancellationToken.None))
+			using (var msg = await Http.PostAsJsonAsync<RegisterAccount>("/api/user/register", regAcc, System.Threading.CancellationToken.None))
 			{
 				if (msg.IsSuccessStatusCode)
 				{
@@ -61,16 +71,17 @@
 					if (result.Success)
 					{
 						alertType = "success";
-						message = $"You have been registered. Login using your password and the name {reg.Name}.";
+						message = $"You have been registered. Login using your password and the name {regAcc.Name}.";
 						reg.Clear();
 						confirmpwd = null;
+						nav.NavigateTo("/account");
 					}
 					else
 					{
 						alertType = "danger";
 						message = result.Message + " Try again with different values.";
 					}
-					nav.NavigateTo("/account");
+					
 				}
 				disableBtn = false;
 			}
@@ -79,9 +90,20 @@
 		return false;
 	}
 
+	private async Task GoogleLogin()
+	{
+		nav.NavigateTo("/api/user/googleAuth?reqMadeFrom=register", true);
+	}
+
 	protected override async Task OnInitializedAsync()
 	{
-		await base.OnInitializedAsync();
+		if (!string.IsNullOrEmpty(Name) && !string.IsNullOrEmpty(Password)) // registration set through parameters
+		{
+			confirmpwd = Password;
+			bool registrationResult = await SubmitRegisterForm(new RegisterAccount { Name = Name, Password = Password });
+			Name = Password = null;
+		}
 
+		await base.OnInitializedAsync();
 	}
 }

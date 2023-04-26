@@ -100,8 +100,8 @@ namespace CompanyBlazor5.Server.Migrations
                 columns: new[] { "loginNo", "loginPassword", "loginUserName" },
                 values: new object[,]
                 {
-                    { 1, "ItsNotSoft", "Bill" },
-                    { 2, "trollsRule", "Jean" }
+                    { 1, new Encryption.Encrypt().Hash("ItsNotSoft"), "Bill" },
+                    { 2, new Encryption.Encrypt().Hash("trollsRule"), "Jean" }
                 });
 
             migrationBuilder.CreateIndex(

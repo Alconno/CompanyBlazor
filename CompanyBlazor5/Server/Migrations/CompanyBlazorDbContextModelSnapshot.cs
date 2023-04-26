@@ -227,13 +227,13 @@ namespace CompanyBlazor5.Server.Migrations
                         new
                         {
                             loginNo = 1,
-                            loginPassword = "ItsNotSoft",
+                            loginPassword = new Encryption.Encrypt().Hash("ItsNotSoft"),
                             loginUserName = "Bill"
                         },
                         new
                         {
                             loginNo = 2,
-                            loginPassword = "trollsRule",
+                            loginPassword = new Encryption.Encrypt().Hash("trollsRule"),
                             loginUserName = "Jean"
                         });
                 });
