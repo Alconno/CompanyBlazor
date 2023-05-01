@@ -169,8 +169,13 @@ else
 
     async Task SaveRow(EmployeeDepartmentBase emp)
     {
-        await employeeGrid.UpdateRow(emp);
-        await updateEmployees();
+        if (ValidateEmployee(emp))
+        {
+            await employeeGrid.UpdateRow(emp);
+            await updateEmployees();
+
+            StateHasChanged();
+        }
     }
 
     async Task CancelEdit(EmployeeDepartmentBase emp)
@@ -186,10 +191,12 @@ else
         empToInsert = emp == empToInsert ? null : empToInsert;
         empToUpdate = emp == empToUpdate ? null : empToUpdate;
 
-
-        await employeeService.DeleteEmployee(emp.employeeNo);
-        await employeeGrid.Reload();
-        await updateEmployees();
+        if (await employeeService.GetSingleEmployee(emp.employeeNo) != null)
+        {
+            await employeeService.DeleteEmployee(emp.employeeNo);
+            await employeeGrid.Reload();
+            await updateEmployees();
+        }
     }
 
     async Task InsertRow()
@@ -222,5 +229,14 @@ else
                     departmentLocation=departmentMap[employeeDepartmentData.departmentNo].Split('-')[1]
                 }
             };
+    }
+
+    bool ValidateEmployee(EmployeeDepartmentBase emp)
+    {
+        if (string.IsNullOrEmpty(emp.employeeName)) return false;
+        if (emp.Salary > 99999 || emp.Salary < 1) return false;
+        if (!departmentService.departments.Any(x => x.departmentNo == emp.departmentNo)) return false;
+
+        return true;
     }
 }

@@ -48,10 +48,12 @@ namespace CompanyBlazor5.Client.Services.EmployeeServices
 
         public async Task<Employee> GetSingleEmployee(int id)
         {
-            var result = await _http.GetFromJsonAsync<Employee>($"api/employee/{id}");
-            if (result != null)
-                return result;
-            throw new Exception("Employee not found\n");
+            var res = await _http.GetAsync($"api/employee/{id}");
+
+            if (res.IsSuccessStatusCode)
+                return await _http.GetFromJsonAsync<Employee>($"api/employee/{id}");
+            else
+                return null;
         }
 
         public async Task UpdateEmployee(Employee employee)
