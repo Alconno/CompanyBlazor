@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace CompanyBlazor5.Client.Pages
+namespace CompanyBlazor5.Client.Pages.Employees
 {
     public class EmployeeDepartmentBase
     {

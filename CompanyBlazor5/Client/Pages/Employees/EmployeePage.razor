@@ -191,7 +191,7 @@ else
         empToInsert = emp == empToInsert ? null : empToInsert;
         empToUpdate = emp == empToUpdate ? null : empToUpdate;
 
-        if (await employeeService.GetSingleEmployee(emp.employeeNo) != null)
+        if (await employeeService.GetEmployee(emp.employeeNo) != null)
         {
             await employeeService.DeleteEmployee(emp.employeeNo);
             await employeeGrid.Reload();
