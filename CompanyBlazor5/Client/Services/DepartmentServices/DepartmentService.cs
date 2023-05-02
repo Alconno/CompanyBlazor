@@ -1,5 +1,6 @@
 ﻿using CompanyBlazor.Shared.Models;
 using Microsoft.AspNetCore.Components;
+using Radzen;
 using System.Net.Http.Json;
 
 namespace CompanyBlazor5.Client.Services.DepartmentServices
@@ -18,17 +19,20 @@ namespace CompanyBlazor5.Client.Services.DepartmentServices
 
         public async Task getDepartments()
         {
-            var ans = await _http.GetFromJsonAsync<List<Department>>("api/department");
-            if (ans != null)
-                departments = ans;
+            var res = await _http.GetAsync("api/department");
+            
+            if (res.IsSuccessStatusCode)
+                departments = await _http.GetFromJsonAsync<List<Department>>("api/department");
         }
 
         public async Task<Department> getDepartment(int id)
         {
-            var ans = await _http.GetFromJsonAsync<Department>($"api/department/{id}");
-            if (ans != null)
-                return ans;
-            throw new Exception("Department not found");
+            var res = await _http.GetAsync($"api/department/{id}");
+
+            if (res.IsSuccessStatusCode)
+                return await _http.GetFromJsonAsync<Department>($"api/department/{id}");
+            else
+                return null;
         }
 
         public async Task CreateDepartment(Department entity)
@@ -39,14 +43,24 @@ namespace CompanyBlazor5.Client.Services.DepartmentServices
 
         public async Task UpdateDepartment(Department entity)
         {
-            var result = await _http.PutAsJsonAsync($"api/department/{entity.departmentNo}", entity);
-            await SetDepartments(result);
+            var res = await _http.GetAsync($"api/department/{entity.departmentNo}");
+
+            if (res.IsSuccessStatusCode)
+            {
+                var result = await _http.PutAsJsonAsync($"api/department/{entity.departmentNo}", entity);
+                await SetDepartments(result);
+            }
         }
 
         public async Task DeleteDepartment(int id)
         {
-            var result = await _http.DeleteAsync($"api/department/{id}");
-            await SetDepartments(result);
+            var res = await _http.GetAsync($"api/department/{id}");
+
+            if (res.IsSuccessStatusCode)
+            {
+                var result = await _http.DeleteAsync($"api/department/{id}");
+                await SetDepartments(result);
+            }
         }
 
         private async Task SetDepartments(HttpResponseMessage result)
