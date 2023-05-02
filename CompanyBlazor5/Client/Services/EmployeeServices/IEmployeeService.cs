@@ -8,7 +8,7 @@ namespace CompanyBlazor5.Client.Services.EmployeeServices
         List<Department> departments { get; set; }
         Task GetDepartments();
         Task GetEmployees();
-        Task<Employee> GetSingleEmployee(int id);
+        Task<Employee> GetEmployee(int id);
 
         Task CreateEmployee(Employee employee);
         Task UpdateEmployee(Employee employee); 
