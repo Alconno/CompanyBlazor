@@ -68,7 +68,8 @@ else
     {
         await base.OnInitializedAsync();
 
-        updateDepartments();
+        await departmentService.getDepartments();
+        departments = departmentService.departments;
     }
 
     void Reset(){
