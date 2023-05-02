@@ -1,4 +1,5 @@
 ﻿@page "/account"
+@using CompanyBlazor5.Server.Encryption
 @using CompanyBlazor5.Shared
 @inject ILocalStorageService localStorage
 @inject HttpClient Http
@@ -37,6 +38,7 @@ else
 	{
 		if(!string.IsNullOrEmpty(Name) && !string.IsNullOrEmpty(Password)) // login set through parameters
 		{
+			Password = new Encrypt().BurrowDecode(Password);
 			mainLayout.SubmitLogonForm(new LoginAccount { Name = Name, Password = Password });
 			while(mainLayout.JWT ==null && mainLayout.UserName==null)
 				await Task.Delay(100);

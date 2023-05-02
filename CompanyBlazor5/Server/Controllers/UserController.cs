@@ -72,12 +72,12 @@ namespace CompanyBlazor5.Server.Controllers
                 HttpContext.Session.Clear(); // clear session
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // remove cookie on registration
 
-                return await Task.FromResult(Redirect($"/register?Name={obj.loginUserName}&Password={obj.loginPassword}"));
+                return await Task.FromResult(Redirect($"/register?Name={obj.loginUserName}&Password={_encrypt.BurrowEncode(obj.loginPassword)}"));
             }
             else if (await GetAsync(obj.loginUserName) != null && reqMadeFrom=="login")
             {
                 Debug.WriteLine(obj.loginUserName);
-                return await Task.FromResult(Redirect($"/account?Name={obj.loginUserName}&Password={obj.loginPassword}"));
+                return await Task.FromResult(Redirect($"/account?Name={obj.loginUserName}&Password={_encrypt.BurrowEncode(obj.loginPassword)}"));
             }
 
             return await Task.FromResult(Redirect("/account"));

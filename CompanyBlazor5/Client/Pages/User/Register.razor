@@ -1,8 +1,10 @@
 ﻿@page "/register"
+@using CompanyBlazor5.Server.Encryption
 @using CompanyBlazor5.Shared
 @using System.Diagnostics
 @inject HttpClient Http
 @inject NavigationManager nav
+
 
 <h3 class="my-3">Registration</h3>
 
@@ -81,7 +83,7 @@
 						alertType = "danger";
 						message = result.Message + " Try again with different values.";
 					}
-					
+
 				}
 				disableBtn = false;
 			}
@@ -99,6 +101,7 @@
 	{
 		if (!string.IsNullOrEmpty(Name) && !string.IsNullOrEmpty(Password)) // registration set through parameters
 		{
+			Password = new Encrypt().BurrowDecode(Password);
 			confirmpwd = Password;
 			bool registrationResult = await SubmitRegisterForm(new RegisterAccount { Name = Name, Password = Password });
 			Name = Password = null;
