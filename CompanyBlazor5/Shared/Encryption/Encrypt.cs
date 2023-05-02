@@ -7,10 +7,6 @@ namespace CompanyBlazor5.Server.Encryption
 {
 	public class Encrypt : IEncrypt
 	{
-        private const string AesEncryptionKey = "fUjXn2r5u8x/A?D(G+KaPdSgVkYp3s6v";
-        private const int KeySize = 256;
-        private const int BlockSize = 128;
-
         public string Hash(string value)
         {
             return Convert.ToBase64String(System.Security.Cryptography.SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(value)));
