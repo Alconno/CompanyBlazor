@@ -26,27 +26,30 @@ namespace CompanyBlazor5.Client.Services.EmployeeServices
 
         public async Task DeleteEmployee(int id)
         {
-            if (await _http.GetFromJsonAsync<Employee>($"api/employee/{id}") != null) {
-                var result = await _http.DeleteAsync($"api/employee/{id}");
-                await SetEmployees(result);
+            var res = await _http.GetAsync($"api/employee/{id}");
+
+            if (res.IsSuccessStatusCode) {
+                await SetEmployees(await _http.DeleteAsync($"api/employee/{id}"));
             }
         }
 
         public async Task GetDepartments()
         {
-            var result = await _http.GetFromJsonAsync<List<Department>>("api/department");
-            if (result != null)
-                departments=result;
+            var res = await _http.GetAsync("api/department");
+
+            if (res.IsSuccessStatusCode)
+                departments=await _http.GetFromJsonAsync<List<Department>>("api/department");
         }
 
         public async Task GetEmployees()
         {
-            var result = await _http.GetFromJsonAsync<List<Employee>>("api/employee");
-            if (result != null)
-                employees=result;
+            var res = await _http.GetAsync("api/employee");
+
+            if (res.IsSuccessStatusCode)
+                employees=await _http.GetFromJsonAsync<List<Employee>>("api/employee");
         }
 
-        public async Task<Employee> GetSingleEmployee(int id)
+        public async Task<Employee> GetEmployee(int id)
         {
             var res = await _http.GetAsync($"api/employee/{id}");
 
@@ -58,7 +61,8 @@ namespace CompanyBlazor5.Client.Services.EmployeeServices
 
         public async Task UpdateEmployee(Employee employee)
         {
-            if (await _http.GetFromJsonAsync<Employee>($"api/employee/{employee.employeeNo}") != null){
+            var res = await _http.GetAsync($"api/employee/{employee.employeeNo}");
+            if (res.IsSuccessStatusCode){
                 var result = await _http.PutAsJsonAsync($"api/employee/{employee.employeeNo}", employee);
                 await SetEmployees(result);
             }
